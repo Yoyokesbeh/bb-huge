@@ -184,15 +184,19 @@ Before closing any research session:
 
 ## Knowledge Base
 
-Deep reference material lives in `references/`. The agent loads these only when
-relevant — not proactively.
+Deep reference material lives in `references/`. Load **only what you need**
+for the current task — do not load all files at once.
 
-| File | When to consult |
-|------|----------------|
-| `references/bb-orchestrator.md` | Multi-skill coordination, tool routing logic, evidence handling rules, conflict resolution |
+| File | When to load |
+|------|-------------|
+| `references/bb-orchestrator.md` | Start of every session — routing logic, evidence rules, multi-agent coordination |
+| `references/bb-standards.md` | Scope questions, "is this in scope?", platform-specific rules, evidence standards |
+| `references/bb-eligible-vulnerabilities.md` | "Is this a valid bug?", CWE lookup, severity triage, what programs accept/reject |
+| `references/bb-operator.md` | "How should I approach this target?", session structure, high-frequency patterns |
+| `references/bb-recon.md` | Recon phase — subdomain enum, tech fingerprinting, JS analysis, attack surface mapping |
+| `references/bb-report-templates.md` | Writing a report — fill-in templates for XSS, IDOR, SSRF, SQLi, and more |
 
-Check the `references/` directory for any files added after this document —
-the library grows over time as new reference material is added.
+Check `references/` for files added after this document — the library grows over time.
 
 ---
 
