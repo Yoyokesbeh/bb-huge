@@ -227,8 +227,207 @@ def upload_attachment(fid):
 @api_bp.get("/enums")
 @api_key_required
 def get_enums():
+    from ..models import PLATFORMS, RECON_CATEGORIES, WEBHOOK_EVENTS
     return jsonify({
-        "severities": SEVERITIES,
-        "statuses":   STATUSES,
-        "agents":     AGENTS,
+        "severities":       SEVERITIES,
+        "statuses":         STATUSES,
+        "agents":           AGENTS,
+        "platforms":        PLATFORMS,
+        "recon_categories": RECON_CATEGORIES,
+        "webhook_events":   WEBHOOK_EVENTS,
     })
+
+
+# ── Programs ──────────────────────────────────────────────────────────────────
+
+@api_bp.get("/programs")
+@api_key_required
+def list_programs():
+    from ..models import Program
+    programs = Program.query.order_by(Program.active.desc(), Program.name).all()
+    return jsonify([p.to_dict() for p in programs])
+
+
+@api_bp.get("/programs/<int:pid>")
+@api_key_required
+def get_program(pid):
+    from ..models import Program
+    p = Program.query.get_or_404(pid)
+    return jsonify(p.to_dict())
+
+
+@api_bp.post("/programs")
+@api_key_required
+def create_program():
+    from ..models import Program
+    data = request.get_json(force=True) or {}
+    if not data.get("name"):
+        return jsonify({"error": "name is required"}), 400
+    p = Program(
+        name        = data["name"].strip(),
+        platform    = data.get("platform", "private"),
+        program_url = data.get("program_url"),
+        scope_in    = data.get("scope_in", ""),
+        scope_out   = data.get("scope_out", ""),
+        notes       = data.get("notes", ""),
+        active      = data.get("active", True),
+    )
+    db.session.add(p)
+    db.session.commit()
+    return jsonify(p.to_dict()), 201
+
+
+@api_bp.patch("/programs/<int:pid>")
+@api_key_required
+def update_program(pid):
+    from ..models import Program
+    from datetime import datetime, timezone
+    p    = Program.query.get_or_404(pid)
+    data = request.get_json(force=True) or {}
+    for field in ["name", "platform", "program_url", "scope_in", "scope_out", "notes"]:
+        if field in data:
+            setattr(p, field, data[field])
+    if "active" in data:
+        p.active = bool(data["active"])
+    p.updated_at = datetime.now(timezone.utc)
+    db.session.commit()
+    return jsonify(p.to_dict())
+
+
+# ── Recon ─────────────────────────────────────────────────────────────────────
+
+@api_bp.get("/programs/<int:pid>/recon")
+@api_key_required
+def list_recon(pid):
+    from ..models import ReconEntry
+    category = request.args.get("category", "")
+    query = ReconEntry.query.filter_by(program_id=pid)
+    if category:
+        query = query.filter_by(category=category)
+    entries = query.order_by(ReconEntry.category, ReconEntry.created_at.desc()).all()
+    return jsonify([e.to_dict() for e in entries])
+
+
+@api_bp.post("/programs/<int:pid>/recon")
+@api_key_required
+def add_recon(pid):
+    from ..models import ReconEntry, Program
+    Program.query.get_or_404(pid)
+    data = request.get_json(force=True) or {}
+    if not data.get("value"):
+        return jsonify({"error": "value is required"}), 400
+    r = ReconEntry(
+        program_id = pid,
+        category   = data.get("category", "subdomain"),
+        value      = data["value"].strip(),
+        notes      = data.get("notes", ""),
+        source     = data.get("source", ""),
+    )
+    db.session.add(r)
+    db.session.commit()
+    return jsonify(r.to_dict()), 201
+
+
+@api_bp.delete("/recon/<int:rid>")
+@api_key_required
+def delete_recon(rid):
+    from ..models import ReconEntry
+    r = ReconEntry.query.get_or_404(rid)
+    db.session.delete(r)
+    db.session.commit()
+    return jsonify({"deleted": rid})
+
+
+# ── Notes ─────────────────────────────────────────────────────────────────────
+
+@api_bp.post("/findings/<int:fid>/notes")
+@api_key_required
+def add_note(fid):
+    from ..models import Note
+    data = request.get_json(force=True) or {}
+    if not data.get("content"):
+        return jsonify({"error": "content is required"}), 400
+    n = Note(
+        finding_id = fid,
+        content    = data["content"],
+        agent      = data.get("agent", "manual"),
+    )
+    db.session.add(n)
+    db.session.commit()
+    return jsonify(n.to_dict()), 201
+
+
+@api_bp.delete("/notes/<int:nid>")
+@api_key_required
+def delete_note(nid):
+    from ..models import Note
+    n = Note.query.get_or_404(nid)
+    db.session.delete(n)
+    db.session.commit()
+    return jsonify({"deleted": nid})
+
+
+# ── Search similar ────────────────────────────────────────────────────────────
+
+@api_bp.get("/findings/similar")
+@api_key_required
+def search_similar():
+    target = request.args.get("target", "").strip()
+    cwe    = request.args.get("cwe", "").strip()
+    title  = request.args.get("title", "").strip()
+
+    if not (target or cwe or title):
+        return jsonify({"error": "provide target, cwe, or title"}), 400
+
+    query = Finding.query
+    conditions = []
+    if target: conditions.append(Finding.target.ilike(f"%{target}%"))
+    if cwe:    conditions.append(Finding.cwe.ilike(f"%{cwe}%"))
+    if title:  conditions.append(Finding.title.ilike(f"%{title}%"))
+    query = query.filter(db.or_(*conditions))
+    results = query.order_by(Finding.created_at.desc()).limit(10).all()
+
+    return jsonify({
+        "count":    len(results),
+        "findings": [f.to_dict() for f in results],
+    })
+
+
+# ── Bulk status update ────────────────────────────────────────────────────────
+
+@api_bp.patch("/findings/bulk/status")
+@api_key_required
+def bulk_update_status():
+    from datetime import datetime, timezone
+    data = request.get_json(force=True) or {}
+    ids    = data.get("ids", [])
+    status = data.get("status")
+    if not ids or not status:
+        return jsonify({"error": "ids (list) and status are required"}), 400
+    if status not in STATUSES:
+        return jsonify({"error": f"status must be one of {STATUSES}"}), 400
+    updated = []
+    for fid in ids:
+        f = Finding.query.get(fid)
+        if f:
+            f.status     = status
+            f.updated_at = datetime.now(timezone.utc)
+            updated.append(fid)
+    db.session.commit()
+    return jsonify({"updated": updated, "status": status})
+
+
+# ── Notify ────────────────────────────────────────────────────────────────────
+
+@api_bp.post("/notify")
+@api_key_required
+def notify():
+    from ..utils import notify_event
+    data  = request.get_json(force=True) or {}
+    event = data.get("event", "finding.created")
+    payload = data.get("payload", {})
+    if not payload:
+        return jsonify({"error": "payload is required"}), 400
+    notify_event(event, payload)
+    return jsonify({"sent": True, "event": event})
+

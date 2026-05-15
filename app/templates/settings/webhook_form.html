@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}Edit Webhook{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width:660px">
+  <div class="page-header">
+    <a href="{{ url_for('settings.index') }}" class="text-muted" style="font-size:13px;text-decoration:none">← Settings</a>
+    <div class="page-title" style="margin-top:6px">Edit Webhook — {{ webhook.name }}</div>
+  </div>
+  <div class="card">
+    <form method="POST">
+      <div class="form-group">
+        <label for="name">Label</label>
+        <input type="text" id="name" name="name" required value="{{ webhook.name }}">
+      </div>
+      <div class="form-group">
+        <label for="wtype">Type</label>
+        <select id="wtype" name="wtype">
+          <option value="discord"  {{ 'selected' if webhook.wtype == 'discord' }}>Discord</option>
+          <option value="telegram" {{ 'selected' if webhook.wtype == 'telegram' }}>Telegram</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>URL / Bot Token</label>
+        <input type="text" name="url_or_token" value="{{ webhook.url_or_token }}" required>
+      </div>
+      <div class="form-group">
+        <label>Chat ID (Telegram only)</label>
+        <input type="text" name="chat_id" value="{{ webhook.chat_id or '' }}"
+               placeholder="Leave empty for Discord">
+      </div>
+      <div class="form-group">
+        <label>Events</label>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;margin-top:4px">
+          {% for ev in webhook_events %}
+          <label style="display:flex;align-items:center;gap:8px;font-size:13px">
+            <input type="checkbox" name="events" value="{{ ev }}"
+                   {{ 'checked' if ev in webhook.events }}
+                   style="width:auto;accent-color:var(--accent)">
+            {{ ev }}
+          </label>
+          {% endfor %}
+        </div>
+      </div>
+      <div class="form-group">
+        <label style="display:flex;align-items:center;gap:8px;text-transform:none;letter-spacing:0;font-size:13px">
+          <input type="checkbox" name="active" {{ 'checked' if webhook.active }}
+                 style="width:auto;accent-color:var(--accent)">
+          Active
+        </label>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:8px">
+        <button type="submit" class="btn btn-primary">Save Changes</button>
+        <a href="{{ url_for('settings.index') }}" class="btn btn-ghost">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

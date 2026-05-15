@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% block title %}Programs{% endblock %}
+
+{% block extra_head %}
+<style>
+  .programs-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 16px;
+    margin-top: 8px;
+  }
+  .program-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    text-decoration: none;
+    display: block;
+    transition: border-color .15s, transform .1s;
+    position: relative;
+  }
+  .program-card:hover { border-color: var(--accent); transform: translateY(-1px); }
+  .program-card.inactive { opacity: .5; }
+  .program-name { font-size: 16px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+  .program-platform {
+    font-size: 11px; color: var(--muted); font-family: var(--mono);
+    text-transform: uppercase; letter-spacing: .4px; margin-bottom: 14px;
+  }
+  .program-stats { display: flex; gap: 10px; flex-wrap: wrap; }
+  .stat-pill {
+    font-family: var(--mono); font-size: 11px;
+    padding: 3px 8px; border-radius: 5px;
+    background: var(--bg3); color: var(--muted);
+    border: 1px solid var(--border);
+  }
+  .stat-pill.has-critical { color: var(--critical); border-color: rgba(255,77,109,.3); background: rgba(255,77,109,.08); }
+  .stat-pill.has-high     { color: var(--high);     border-color: rgba(255,154,60,.3);  background: rgba(255,154,60,.08); }
+  .inactive-badge {
+    position: absolute; top: 14px; right: 14px;
+    font-size: 10px; color: var(--muted);
+    background: var(--bg3); border: 1px solid var(--border);
+    padding: 2px 7px; border-radius: 4px; font-family: var(--mono);
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+  <div class="page-header">
+    <div class="page-title">Programs</div>
+    <div style="margin-left:auto">
+      <a href="{{ url_for('programs.add_program') }}" class="btn btn-primary">+ New Program</a>
+    </div>
+  </div>
+
+  {% if programs %}
+    <div class="programs-grid">
+      {% for p in programs %}
+      {% set s = p.stats() %}
+      <a href="{{ url_for('programs.detail', pid=p.id) }}"
+         class="program-card {{ 'inactive' if not p.active }}">
+        {% if not p.active %}<span class="inactive-badge">inactive</span>{% endif %}
+        <div class="program-name">{{ p.name }}</div>
+        <div class="program-platform">{{ p.platform }}</div>
+        <div class="program-stats">
+          <span class="stat-pill">{{ s.total }} findings</span>
+          {% if s.by_severity.critical > 0 %}
+          <span class="stat-pill has-critical">{{ s.by_severity.critical }} critical</span>
+          {% endif %}
+          {% if s.by_severity.high > 0 %}
+          <span class="stat-pill has-high">{{ s.by_severity.high }} high</span>
+          {% endif %}
+          {% if s.by_status.confirmed > 0 %}
+          <span class="stat-pill" style="color:#06d6a0;border-color:rgba(6,214,160,.3);background:rgba(6,214,160,.08)">
+            {{ s.by_status.confirmed }} confirmed
+          </span>
+          {% endif %}
+          {% if s.by_status.rewarded > 0 %}
+          <span class="stat-pill" style="color:#00ffb3;border-color:rgba(0,255,179,.3);background:rgba(0,255,179,.08)">
+            {{ s.by_status.rewarded }} rewarded
+          </span>
+          {% endif %}
+          <span class="stat-pill">{{ p.recon|length }} recon</span>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="card" style="text-align:center;padding:60px;color:var(--muted)">
+      No programs yet. <a href="{{ url_for('programs.add_program') }}" style="color:var(--accent2)">Add your first program →</a>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -418,8 +418,12 @@
       <div class="nav-links">
         <a href="{{ url_for('findings.dashboard') }}"
            class="{{ 'active' if request.endpoint == 'findings.dashboard' }}">Dashboard</a>
+        <a href="{{ url_for('programs.list_programs') }}"
+           class="{{ 'active' if request.blueprint == 'programs' }}">Programs</a>
         <a href="{{ url_for('findings.list_findings') }}"
            class="{{ 'active' if request.endpoint in ['findings.list_findings', 'findings.detail'] }}">Findings</a>
+        <a href="{{ url_for('settings.index') }}"
+           class="{{ 'active' if request.blueprint == 'settings' }}">Settings</a>
       </div>
       <div class="nav-actions">
         <a href="{{ url_for('findings.add_finding') }}" class="btn-add">+ Add Finding</a>

@@ -19,10 +19,14 @@ def create_app(config_object="config.Config"):
     from .routes.auth     import auth_bp
     from .routes.findings import findings_bp
     from .routes.api      import api_bp
+    from .routes.programs import programs_bp
+    from .routes.settings import settings_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(findings_bp)
     app.register_blueprint(api_bp, url_prefix="/api/v1")
+    app.register_blueprint(programs_bp)
+    app.register_blueprint(settings_bp)
 
     # Jinja helpers
     from .models import SEVERITY_COLORS, STATUS_COLORS

@@ -173,6 +173,10 @@
         Attachments
         {% if finding.attachments %}<span style="margin-left:4px;background:rgba(124,106,255,.2);color:var(--accent2);padding:1px 6px;border-radius:4px;font-size:11px">{{ finding.attachments|length }}</span>{% endif %}
       </button>
+      <button class="tab-btn" onclick="showTab('notes', this)" id="notes-tab-btn">
+        Notes
+        {% if finding.notes %}<span style="margin-left:4px;background:rgba(124,106,255,.2);color:var(--accent2);padding:1px 6px;border-radius:4px;font-size:11px">{{ finding.notes|length }}</span>{% endif %}
+      </button>
     </div>
 
     <!-- Description -->
@@ -226,10 +230,53 @@
       {% else %}
         <div class="text-muted" style="padding:20px 0">No attachments.</div>
       {% endif %}
+    <!-- Notes / Activity log -->
+    <div id="tab-notes" class="tab-panel" id="notes">
+      {% if finding.notes %}
+        <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:18px">
+          {% for note in finding.notes %}
+          <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px 14px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+              <span style="font-size:11px;font-family:var(--mono);color:var(--accent2)">{{ note.agent }}</span>
+              <div style="display:flex;align-items:center;gap:8px">
+                <span style="font-size:11px;color:var(--muted)">
+                  {{ note.created_at.strftime('%Y-%m-%d %H:%M') if note.created_at }}
+                </span>
+                <form method="POST" action="{{ url_for('settings.delete_note', nid=note.id) }}"
+                      onsubmit="return confirm('Delete note?')" style="display:inline">
+                  <button type="submit" class="btn btn-danger btn-sm" style="padding:2px 7px">✕</button>
+                </form>
+              </div>
+            </div>
+            <div class="md-body note-md">{{ note.content }}</div>
+          </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="text-muted" style="margin-bottom:16px">No notes yet.</div>
+      {% endif %}
+
+      <!-- Add note form -->
+      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:14px">
+        <div style="font-size:12px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.4px;margin-bottom:10px">
+          + Add Note
+        </div>
+        <form method="POST" action="{{ url_for('settings.add_note', fid=finding.id) }}">
+          <div class="form-group">
+            <textarea name="content" rows="3" placeholder="Markdown supported…" style="resize:vertical"></textarea>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <select name="agent" style="width:auto;padding:7px 10px;font-size:13px">
+              {% for a in ['manual','gemini-cli','claude-code','claude','codex','other'] %}
+              <option value="{{ a }}">{{ a }}</option>
+              {% endfor %}
+            </select>
+            <button type="submit" class="btn btn-primary btn-sm">Add Note</button>
+          </div>
+        </form>
+      </div>
     </div>
   </div>
-
-  <!-- Danger zone -->
   <div class="danger-zone">
     <h3>⚠ Danger Zone</h3>
     <form method="POST" action="{{ url_for('findings.delete_finding', fid=finding.id) }}"
@@ -251,15 +298,20 @@
     const el = document.getElementById(id);
     if (el) el.innerHTML = marked.parse(el.textContent);
   });
-  // Syntax highlight
+  document.querySelectorAll('.note-md').forEach(el => {
+    el.innerHTML = marked.parse(el.textContent);
+  });
   document.querySelectorAll('pre code').forEach(el => hljs.highlightElement(el));
 
-  // Tabs
   function showTab(name, btn) {
     document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
     document.getElementById('tab-' + name).classList.add('active');
     btn.classList.add('active');
+  }
+
+  if (window.location.hash === '#notes') {
+    document.getElementById('notes-tab-btn').click();
   }
 </script>
 {% endblock %}

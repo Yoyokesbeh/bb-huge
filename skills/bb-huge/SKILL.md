@@ -40,6 +40,13 @@ All portal operations use the `bb-huge` MCP server. Auth is handled via the
 | `bb_upload_attachment` | Attach screenshots, Burp exports, or scripts |
 | `bb_delete_finding` | Remove a finding (use sparingly) |
 | `bb_get_stats` | Dashboard summary — totals by severity/status/agent |
+| `bb_search_similar`     | Before creating — check for duplicates |
+| `bb_add_note`           | Add progress note without overwriting fields |
+| `bb_bulk_update_status` | Update status for multiple findings at once |
+| `bb_notify`             | Send Discord/Telegram notification manually |
+| `bb_create_program`     | Create a new bug bounty program |
+| `bb_list_programs`      | List all programs with stats |
+| `bb_add_recon`          | Add recon entry (subdomain, endpoint, tech…) |
 
 **Agent identity rule**: Always set `agent` to the identity of whoever is
 running (`gemini-cli`, `claude`, `claude-code`, `emmu`, `codex`). Never use

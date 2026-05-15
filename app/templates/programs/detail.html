@@ -1,0 +1,332 @@
+{% extends "base.html" %}
+{% block title %}{{ program.name }}{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+<style>
+  /* ── header ── */
+  .prog-header {
+    display:flex; align-items:flex-start; gap:16px;
+    flex-wrap:wrap; margin-bottom:24px;
+  }
+  .prog-header-main { flex:1; min-width:0; }
+  .prog-name { font-size:24px; font-weight:700; margin-bottom:4px; }
+  .prog-meta { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+  .prog-url  { font-size:12px; color:var(--accent2); text-decoration:none; }
+  .prog-url:hover { text-decoration:underline; }
+
+  /* ── stat cards ── */
+  .stats-row { display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:10px; margin-bottom:24px; }
+  .scard { background:var(--bg2); border:1px solid var(--border); border-radius:9px; padding:14px 16px; }
+  .scard-label { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.4px; font-weight:600; margin-bottom:4px; }
+  .scard-val   { font-family:var(--mono); font-size:26px; font-weight:700; line-height:1; }
+
+  /* ── tabs ── */
+  .tabs { display:flex; gap:0; border-bottom:1px solid var(--border); margin-bottom:20px; }
+  .tab-btn {
+    padding:10px 18px; font-size:13px; font-weight:500;
+    background:none; border:none; color:var(--muted);
+    cursor:pointer; border-bottom:2px solid transparent;
+    margin-bottom:-1px; transition:all .15s; font-family:var(--sans);
+  }
+  .tab-btn:hover { color:var(--text); }
+  .tab-btn.active { color:var(--accent2); border-bottom-color:var(--accent2); }
+  .tab-panel { display:none; }
+  .tab-panel.active { display:block; }
+  .tab-count {
+    margin-left:5px; background:rgba(124,106,255,.15);
+    color:var(--accent2); padding:1px 6px; border-radius:4px; font-size:11px;
+  }
+
+  /* ── findings table ── */
+  .finding-link { color:var(--text); text-decoration:none; font-weight:500; }
+  .finding-link:hover { color:var(--accent2); }
+
+  /* ── recon ── */
+  .recon-section { margin-bottom:24px; }
+  .recon-category-title {
+    font-size:11px; font-weight:700; color:var(--muted);
+    text-transform:uppercase; letter-spacing:.5px;
+    margin-bottom:8px; display:flex; align-items:center; gap:8px;
+  }
+  .recon-chips { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:4px; }
+  .recon-chip {
+    font-family:var(--mono); font-size:12px;
+    background:var(--bg3); border:1px solid var(--border);
+    border-radius:6px; padding:4px 10px;
+    color:var(--text); display:flex; align-items:center; gap:6px;
+  }
+  .recon-chip .chip-source { color:var(--muted); font-size:10px; }
+  .recon-chip .chip-del {
+    color:var(--muted); cursor:pointer; background:none;
+    border:none; padding:0; line-height:1; font-size:12px;
+    margin-left:2px;
+  }
+  .recon-chip .chip-del:hover { color:var(--critical); }
+
+  /* ── add recon inline form ── */
+  .add-recon-form {
+    background:var(--bg3); border:1px solid var(--border);
+    border-radius:8px; padding:14px 16px; margin-top:14px;
+  }
+  .add-recon-form .form-row {
+    display:flex; gap:8px; flex-wrap:wrap; align-items:flex-end;
+  }
+  .add-recon-form input, .add-recon-form select {
+    padding:7px 10px; font-size:13px;
+  }
+  .add-recon-form .f-val { flex:1; min-width:200px; }
+  .add-recon-form .f-cat { width:140px; }
+  .add-recon-form .f-src { width:130px; }
+  .add-recon-form .f-notes { width:100%; margin-top:8px; }
+
+  /* ── scope section ── */
+  .scope-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:20px; }
+  @media(max-width:700px){ .scope-grid { grid-template-columns:1fr; } }
+  .scope-box { background:var(--bg3); border:1px solid var(--border); border-radius:8px; padding:14px 16px; }
+  .scope-box-title { font-size:11px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.4px; margin-bottom:10px; }
+  .scope-box.in-scope   { border-color:rgba(6,214,160,.25); }
+  .scope-box.out-scope  { border-color:rgba(255,77,109,.2); }
+
+  /* ── danger zone ── */
+  .danger-zone { border:1px solid rgba(255,77,109,.2); border-radius:10px; padding:16px 20px; margin-top:24px; }
+  .danger-zone h3 { font-size:13px; color:var(--critical); margin-bottom:10px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+
+  <!-- Header -->
+  <div class="prog-header">
+    <div class="prog-header-main">
+      <a href="{{ url_for('programs.list_programs') }}" class="text-muted" style="font-size:13px;text-decoration:none">← Programs</a>
+      <div class="prog-name" style="margin-top:6px">
+        {{ program.name }}
+        {% if not program.active %}
+          <span style="font-size:13px;color:var(--muted);font-weight:400;margin-left:8px">(inactive)</span>
+        {% endif %}
+      </div>
+      <div class="prog-meta">
+        <span class="badge badge-informational">{{ program.platform }}</span>
+        {% if program.program_url %}
+          <a href="{{ program.program_url }}" target="_blank" rel="noopener" class="prog-url">↗ Program Page</a>
+        {% endif %}
+        <span class="text-muted" style="font-size:12px">
+          Created {{ program.created_at.strftime('%Y-%m-%d') if program.created_at }}
+        </span>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;flex-shrink:0">
+      <a href="{{ url_for('findings.add_finding') }}?program_id={{ program.id }}" class="btn btn-primary btn-sm">+ Finding</a>
+      <a href="{{ url_for('programs.edit_program', pid=program.id) }}" class="btn btn-ghost btn-sm">Edit</a>
+    </div>
+  </div>
+
+  <!-- Stats row -->
+  {% set s = program.stats() %}
+  <div class="stats-row">
+    <div class="scard">
+      <div class="scard-label">Total</div>
+      <div class="scard-val" style="color:var(--accent2)">{{ s.total }}</div>
+    </div>
+    <div class="scard">
+      <div class="scard-label">Critical</div>
+      <div class="scard-val" style="color:var(--critical)">{{ s.by_severity.critical }}</div>
+    </div>
+    <div class="scard">
+      <div class="scard-label">High</div>
+      <div class="scard-val" style="color:var(--high)">{{ s.by_severity.high }}</div>
+    </div>
+    <div class="scard">
+      <div class="scard-label">Confirmed</div>
+      <div class="scard-val" style="color:#06d6a0">{{ s.by_status.confirmed }}</div>
+    </div>
+    <div class="scard">
+      <div class="scard-label">Rewarded</div>
+      <div class="scard-val" style="color:#00ffb3">{{ s.by_status.rewarded }}</div>
+    </div>
+    <div class="scard">
+      <div class="scard-label">Recon</div>
+      <div class="scard-val" style="color:var(--low)">{{ program.recon|length }}</div>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="card">
+    <div class="tabs">
+      <button class="tab-btn active" onclick="showTab('findings',this)">
+        Findings<span class="tab-count">{{ findings|length }}</span>
+      </button>
+      <button class="tab-btn" onclick="showTab('recon',this)">
+        Recon<span class="tab-count">{{ program.recon|length }}</span>
+      </button>
+      <button class="tab-btn" onclick="showTab('scope',this)">Scope</button>
+      <button class="tab-btn" onclick="showTab('notes',this)">Notes</button>
+    </div>
+
+    <!-- Findings tab -->
+    <div id="tab-findings" class="tab-panel active">
+      {% if findings %}
+      <div style="overflow-x:auto">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th><th>Title</th><th>Severity</th>
+              <th>CVSS</th><th>Status</th><th>Agent</th><th>Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for f in findings %}
+            <tr>
+              <td class="mono text-muted" style="font-size:11px">{{ f.id }}</td>
+              <td>
+                <a href="{{ url_for('findings.detail', fid=f.id) }}" class="finding-link">{{ f.title }}</a>
+                {% if f.tags %}
+                  {% for tag in f.tags %}
+                  <span style="font-size:10px;background:rgba(124,106,255,.1);color:var(--accent2);padding:1px 5px;border-radius:3px;margin-left:3px">{{ tag }}</span>
+                  {% endfor %}
+                {% endif %}
+              </td>
+              <td><span class="badge badge-{{ f.severity }}">{{ f.severity }}</span></td>
+              <td class="mono" style="font-size:12px">{{ "%.1f"|format(f.cvss) if f.cvss else '—' }}</td>
+              <td>
+                {% set sc = f.status.replace('/','').replace('-','') %}
+                <span class="badge badge-{{ sc }}">{{ f.status }}</span>
+              </td>
+              <td class="text-muted mono" style="font-size:11px">{{ f.agent }}</td>
+              <td class="text-muted" style="font-size:12px">{{ f.created_at.strftime('%Y-%m-%d') if f.created_at }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+        <div style="text-align:center;padding:40px;color:var(--muted)">
+          No findings yet.
+          <a href="{{ url_for('findings.add_finding') }}?program_id={{ program.id }}" style="color:var(--accent2)">Add the first one →</a>
+        </div>
+      {% endif %}
+    </div>
+
+    <!-- Recon tab -->
+    <div id="tab-recon" class="tab-panel" id="recon">
+      {% set cat_icons = {'subdomain':'🌐','endpoint':'🔗','technology':'⚙️','parameter':'🔧','credential':'🔑','ip':'📡','other':'📌'} %}
+      {% for category in recon_categories %}
+        {% if recon_grouped.get(category) %}
+        <div class="recon-section">
+          <div class="recon-category-title">
+            {{ cat_icons.get(category,'📌') }} {{ category }}
+            <span class="tab-count" style="margin-left:0">{{ recon_grouped[category]|length }}</span>
+          </div>
+          <div class="recon-chips">
+            {% for r in recon_grouped[category] %}
+            <div class="recon-chip" title="{{ r.notes or '' }}">
+              <span>{{ r.value }}</span>
+              {% if r.source %}<span class="chip-source">{{ r.source }}</span>{% endif %}
+              <form method="POST" action="{{ url_for('programs.delete_recon', rid=r.id) }}"
+                    style="display:inline" onsubmit="return confirm('Delete?')">
+                <button type="submit" class="chip-del" title="Delete">✕</button>
+              </form>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+      {% endfor %}
+
+      <!-- Add recon inline form -->
+      <div class="add-recon-form">
+        <div style="font-size:12px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.4px;margin-bottom:10px">
+          + Add Recon Entry
+        </div>
+        <form method="POST" action="{{ url_for('programs.add_recon', pid=program.id) }}">
+          <div class="form-row">
+            <select name="category" class="f-cat">
+              {% for c in recon_categories %}
+              <option value="{{ c }}">{{ c }}</option>
+              {% endfor %}
+            </select>
+            <input type="text" name="value" placeholder="Value (domain, URL, tech…)" class="f-val" required>
+            <input type="text" name="source" placeholder="Source (tool/agent)" class="f-src">
+            <button type="submit" class="btn btn-primary btn-sm">Add</button>
+          </div>
+          <input type="text" name="notes" placeholder="Notes (optional)" class="f-notes" style="margin-top:8px">
+        </form>
+      </div>
+    </div>
+
+    <!-- Scope tab -->
+    <div id="tab-scope" class="tab-panel">
+      <div class="scope-grid">
+        <div class="scope-box in-scope">
+          <div class="scope-box-title">✅ In Scope</div>
+          {% if program.scope_in %}
+            <div class="md-body" id="md-scope-in">{{ program.scope_in }}</div>
+          {% else %}
+            <div class="text-muted">No in-scope rules defined.</div>
+          {% endif %}
+        </div>
+        <div class="scope-box out-scope">
+          <div class="scope-box-title">❌ Out of Scope</div>
+          {% if program.scope_out %}
+            <div class="md-body" id="md-scope-out">{{ program.scope_out }}</div>
+          {% else %}
+            <div class="text-muted">No out-of-scope rules defined.</div>
+          {% endif %}
+        </div>
+      </div>
+      <a href="{{ url_for('programs.edit_program', pid=program.id) }}" class="btn btn-ghost btn-sm">Edit Scope →</a>
+    </div>
+
+    <!-- Notes tab -->
+    <div id="tab-notes" class="tab-panel">
+      {% if program.notes %}
+        <div class="md-body" id="md-notes">{{ program.notes }}</div>
+        <div style="margin-top:16px">
+          <a href="{{ url_for('programs.edit_program', pid=program.id) }}" class="btn btn-ghost btn-sm">Edit Notes →</a>
+        </div>
+      {% else %}
+        <div class="text-muted" style="padding:20px 0">No notes yet.
+          <a href="{{ url_for('programs.edit_program', pid=program.id) }}" style="color:var(--accent2)">Add notes →</a>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Danger zone -->
+  <div class="danger-zone">
+    <h3>⚠ Danger Zone</h3>
+    <form method="POST" action="{{ url_for('programs.delete_program', pid=program.id) }}"
+          onsubmit="return confirm('Delete program and all its recon data? Findings will be unlinked, not deleted.')">
+      <button type="submit" class="btn btn-danger btn-sm">Delete Program</button>
+    </form>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>
+  marked.setOptions({ breaks:true, gfm:true });
+  ['md-scope-in','md-scope-out','md-notes'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.innerHTML = marked.parse(el.textContent);
+  });
+  document.querySelectorAll('pre code').forEach(el => hljs.highlightElement(el));
+
+  function showTab(name, btn) {
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('tab-'+name).classList.add('active');
+    btn.classList.add('active');
+  }
+
+  // Auto-open recon tab if URL has #recon
+  if (window.location.hash === '#recon') {
+    document.querySelectorAll('.tab-btn')[1].click();
+  }
+</script>
+{% endblock %}

@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+{% block title %}Settings{% endblock %}
+
+{% block extra_head %}
+<style>
+  .section-title { font-size:16px; font-weight:600; margin-bottom:16px; }
+  .webhook-card {
+    background:var(--bg3); border:1px solid var(--border);
+    border-radius:9px; padding:16px 18px; margin-bottom:10px;
+    display:flex; align-items:center; gap:14px; flex-wrap:wrap;
+  }
+  .webhook-card.inactive { opacity:.5; }
+  .wh-name  { font-weight:600; font-size:14px; flex:1; min-width:120px; }
+  .wh-type  { font-family:var(--mono); font-size:11px; color:var(--muted);
+              background:var(--bg2); padding:2px 8px; border-radius:4px; }
+  .wh-events { display:flex; gap:4px; flex-wrap:wrap; }
+  .wh-event-tag {
+    font-size:10px; background:rgba(124,106,255,.1);
+    color:var(--accent2); padding:2px 6px; border-radius:3px;
+    font-family:var(--mono);
+  }
+  .wh-actions { display:flex; gap:6px; }
+
+  /* Add form */
+  .add-form { background:var(--bg2); border:1px solid var(--border); border-radius:10px; padding:22px; }
+  .form-grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  @media(max-width:600px){ .form-grid-2 { grid-template-columns:1fr; } }
+  .events-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:8px; margin-top:4px; }
+  .event-check { display:flex; align-items:center; gap:8px; font-size:13px; }
+  .event-check input { width:auto; accent-color:var(--accent); }
+  .type-fields { margin-top:12px; padding:12px; background:var(--bg3); border-radius:8px; border:1px solid var(--border); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width:860px">
+  <div class="page-header">
+    <div class="page-title">Settings</div>
+  </div>
+
+  <!-- Existing webhooks -->
+  <div class="section-title">Webhooks</div>
+
+  {% if webhooks %}
+    {% for w in webhooks %}
+    <div class="webhook-card {{ 'inactive' if not w.active }}">
+      <div>
+        <div class="wh-name">{{ w.name }}</div>
+        <div style="margin-top:4px;display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+          <span class="wh-type">{{ w.wtype }}</span>
+          {% if not w.active %}<span class="wh-type" style="color:var(--critical)">disabled</span>{% endif %}
+        </div>
+      </div>
+      <div class="wh-events" style="flex:1">
+        {% for e in w.events %}
+        <span class="wh-event-tag">{{ e }}</span>
+        {% endfor %}
+      </div>
+      <div class="wh-actions">
+        <form method="POST" action="{{ url_for('settings.test_webhook', wid=w.id) }}" style="display:inline">
+          <button type="submit" class="btn btn-ghost btn-sm" title="Send test">Test</button>
+        </form>
+        <form method="POST" action="{{ url_for('settings.toggle_webhook', wid=w.id) }}" style="display:inline">
+          <button type="submit" class="btn btn-ghost btn-sm">
+            {{ 'Disable' if w.active else 'Enable' }}
+          </button>
+        </form>
+        <a href="{{ url_for('settings.edit_webhook', wid=w.id) }}" class="btn btn-ghost btn-sm">Edit</a>
+        <form method="POST" action="{{ url_for('settings.delete_webhook', wid=w.id) }}" style="display:inline"
+              onsubmit="return confirm('Delete webhook?')">
+          <button type="submit" class="btn btn-danger btn-sm">✕</button>
+        </form>
+      </div>
+    </div>
+    {% endfor %}
+  {% else %}
+    <div class="text-muted" style="margin-bottom:20px;font-size:13px">No webhooks configured yet.</div>
+  {% endif %}
+
+  <!-- Add webhook form -->
+  <div style="margin-top:24px">
+    <div style="font-size:14px;font-weight:600;color:var(--muted);text-transform:uppercase;
+                letter-spacing:.4px;margin-bottom:14px;font-size:12px">
+      Add Webhook
+    </div>
+    <div class="add-form">
+      <form method="POST" action="{{ url_for('settings.add_webhook') }}">
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label for="name">Label</label>
+            <input type="text" id="name" name="name" required placeholder="e.g. Discord Alerts">
+          </div>
+          <div class="form-group">
+            <label for="wtype">Type</label>
+            <select id="wtype" name="wtype" onchange="toggleTypeFields(this.value)">
+              <option value="discord">Discord</option>
+              <option value="telegram">Telegram</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="discord-fields" class="type-fields">
+          <div class="form-group" style="margin-bottom:0">
+            <label for="url_or_token_d">Webhook URL</label>
+            <input type="text" id="url_or_token_d" name="url_or_token"
+                   placeholder="https://discord.com/api/webhooks/…">
+          </div>
+        </div>
+
+        <div id="telegram-fields" class="type-fields" style="display:none">
+          <div class="form-grid-2">
+            <div class="form-group" style="margin-bottom:0">
+              <label>Bot Token</label>
+              <input type="text" name="url_or_token_tg" placeholder="123456:ABC-DEF…">
+            </div>
+            <div class="form-group" style="margin-bottom:0">
+              <label>Chat ID</label>
+              <input type="text" name="chat_id" placeholder="-100123456789">
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-top:14px">
+          <label>Trigger on Events</label>
+          <div class="events-grid">
+            {% for ev in webhook_events %}
+            <label class="event-check">
+              <input type="checkbox" name="events" value="{{ ev }}" checked>
+              {{ ev }}
+            </label>
+            {% endfor %}
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="margin-top:8px">Add Webhook</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function toggleTypeFields(type) {
+  document.getElementById('discord-fields').style.display  = type === 'discord'  ? 'block' : 'none';
+  document.getElementById('telegram-fields').style.display = type === 'telegram' ? 'block' : 'none';
+  // swap the actual name so only the visible one submits
+  document.querySelector('#discord-fields input').name  = type === 'discord'  ? 'url_or_token' : '_';
+  document.querySelector('#telegram-fields input').name = type === 'telegram' ? 'url_or_token' : '_';
+}
+</script>
+{% endblock %}

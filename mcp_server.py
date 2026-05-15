@@ -173,6 +173,101 @@ TOOLS = [
             },
         },
     },
+    {
+        "name": "bb_search_similar",
+        "description": (
+            "Search for existing findings similar to what you're about to log. "
+            "Call this before bb_create_finding to avoid duplicates."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "target": {"type": "string", "description": "Target domain or program name"},
+                "cwe":    {"type": "string", "description": "CWE identifier e.g. CWE-79"},
+                "title":  {"type": "string", "description": "Keywords from the finding title"},
+            },
+        },
+    },
+    {
+        "name": "bb_add_note",
+        "description": "Add a note/comment to an existing finding without overwriting any field. Use this to log progress, dead ends, or partial findings.",
+        "inputSchema": {
+            "type": "object",
+            "required": ["id", "content"],
+            "properties": {
+                "id":      {"type": "integer", "description": "Finding ID"},
+                "content": {"type": "string",  "description": "Markdown note content"},
+                "agent":   {"type": "string",  "description": "Agent name (defaults to 'manual')"},
+            },
+        },
+    },
+    {
+        "name": "bb_bulk_update_status",
+        "description": "Update the status of multiple findings at once.",
+        "inputSchema": {
+            "type": "object",
+            "required": ["ids", "status"],
+            "properties": {
+                "ids":    {"type": "array",  "items": {"type": "integer"}, "description": "List of finding IDs"},
+                "status": {"type": "string", "enum": ["discovered","debugging","confirmed","reported","rewarded","denied","duplicate","n/a"]},
+            },
+        },
+    },
+    {
+        "name": "bb_notify",
+        "description": "Send a notification to all configured webhooks (Discord/Telegram). Use to alert the user about important discoveries.",
+        "inputSchema": {
+            "type": "object",
+            "required": ["payload"],
+            "properties": {
+                "event":   {"type": "string", "description": "Event name e.g. finding.confirmed", "default": "finding.created"},
+                "payload": {
+                    "type": "object",
+                    "description": "Notification content",
+                    "properties": {
+                        "title":   {"type": "string"},
+                        "message": {"type": "string"},
+                    },
+                },
+            },
+        },
+    },
+    {
+        "name": "bb_create_program",
+        "description": "Create a new bug bounty program entry with scope and platform info.",
+        "inputSchema": {
+            "type": "object",
+            "required": ["name"],
+            "properties": {
+                "name":        {"type": "string", "description": "Program name e.g. Acme Corp"},
+                "platform":    {"type": "string", "description": "HackerOne, Bugcrowd, Intigriti, private…"},
+                "program_url": {"type": "string", "description": "URL to the program page"},
+                "scope_in":    {"type": "string", "description": "In-scope rules (Markdown)"},
+                "scope_out":   {"type": "string", "description": "Out-of-scope rules (Markdown)"},
+                "notes":       {"type": "string", "description": "General notes about this program"},
+            },
+        },
+    },
+    {
+        "name": "bb_list_programs",
+        "description": "List all bug bounty programs with their stats.",
+        "inputSchema": {"type": "object", "properties": {}},
+    },
+    {
+        "name": "bb_add_recon",
+        "description": "Add a recon entry (subdomain, endpoint, technology, parameter, etc.) to a program.",
+        "inputSchema": {
+            "type": "object",
+            "required": ["program_id", "value"],
+            "properties": {
+                "program_id": {"type": "integer"},
+                "category":   {"type": "string", "enum": ["subdomain","endpoint","technology","parameter","credential","ip","other"], "default": "subdomain"},
+                "value":      {"type": "string", "description": "The actual data (domain, URL, tech name…)"},
+                "notes":      {"type": "string"},
+                "source":     {"type": "string", "description": "Tool or agent that found this"},
+            },
+        },
+    },
 ]
 
 
@@ -249,6 +344,30 @@ def dispatch(name: str, args: dict) -> Any:
             })
         except Exception as e:
             return {"error": str(e)}
+
+    elif name == "bb_search_similar":
+        qs = "&".join(f"{k}={v}" for k, v in args.items() if v)
+        return api_get(f"/findings/similar{'?' + qs if qs else ''}")
+
+    elif name == "bb_add_note":
+        fid = args.pop("id")
+        return api_post(f"/findings/{fid}/notes", args)
+
+    elif name == "bb_bulk_update_status":
+        return api_patch("/findings/bulk/status", args)
+
+    elif name == "bb_notify":
+        return api_post("/notify", args)
+
+    elif name == "bb_create_program":
+        return api_post("/programs", args)
+
+    elif name == "bb_list_programs":
+        return api_get("/programs")
+
+    elif name == "bb_add_recon":
+        pid = args.pop("program_id")
+        return api_post(f"/programs/{pid}/recon", args)
 
     else:
         return {"error": f"Unknown tool: {name}"}
