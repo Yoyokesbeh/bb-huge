@@ -355,7 +355,16 @@
       {% for p in programs if p.active %}
       {% set s = p.stats() %}
       <a href="{{ url_for('programs.detail', pid=p.id) }}" class="program-mini">
-        <div class="program-mini-name">{{ p.name }}</div>
+        <div class="program-mini-name">
+          {% if p.company_url or p.program_url %}
+            <img 
+              src="https://www.google.com/s2/favicons?domain={{ p.company_url or p.program_url }}&sz=16"
+              style="width:14px;height:14px;border-radius:3px;vertical-align:middle;margin-right:5px"
+              onerror="this.style.display='none'"
+            >
+          {% endif %}
+          {{ p.name }}
+        </div>
         <div class="program-mini-stats">
           <span>{{ s.total }} total</span>
           {% if s.by_severity.critical > 0 %}<span class="crit">{{ s.by_severity.critical }} crit</span>{% endif %}

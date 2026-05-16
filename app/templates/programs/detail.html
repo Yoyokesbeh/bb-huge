@@ -4,22 +4,52 @@
 {% block extra_head %}
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
 <style>
-  /* ── header ── */
-  .prog-header {
-    display:flex; align-items:flex-start; gap:16px;
-    flex-wrap:wrap; margin-bottom:24px;
+  /* ── hero header ── */
+  .prog-hero { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; margin-bottom: 24px; }
+  .prog-hero-banner {
+    height: 70px;
+    background: linear-gradient(135deg, #1a1630 0%, #2a1f4a 50%, #1a2640 100%);
+    position: relative;
   }
-  .prog-header-main { flex:1; min-width:0; }
-  .prog-name { font-size:24px; font-weight:700; margin-bottom:4px; }
-  .prog-meta { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
-  .prog-url  { font-size:12px; color:var(--accent2); text-decoration:none; }
-  .prog-url:hover { text-decoration:underline; }
-
-  /* ── stat cards ── */
-  .stats-row { display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:10px; margin-bottom:24px; }
-  .scard { background:var(--bg2); border:1px solid var(--border); border-radius:9px; padding:14px 16px; }
-  .scard-label { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.4px; font-weight:600; margin-bottom:4px; }
-  .scard-val   { font-family:var(--mono); font-size:26px; font-weight:700; line-height:1; }
+  .prog-hero-banner::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(45deg, transparent, transparent 8px, rgba(138,122,255,0.04) 8px, rgba(138,122,255,0.04) 16px);
+  }
+  .prog-banner-nav {
+    position: absolute; top: 12px; left: 16px;
+    font-size: 12px; color: rgba(255,255,255,0.5); text-decoration: none; z-index: 1;
+  }
+  .prog-banner-nav:hover { color: rgba(255,255,255,0.85); }
+  .prog-banner-actions {
+    position: absolute; top: 10px; right: 12px;
+    display: flex; gap: 6px; z-index: 1;
+  }
+  .prog-identity {
+    padding: 0 16px 16px;
+    display: flex; align-items: flex-end; gap: 12px;
+  }
+  .prog-logo-wrap {
+    width: 56px; height: 56px; border-radius: 12px;
+    border: 2px solid var(--bg2); background: var(--bg3);
+    display: flex; align-items: center; justify-content: center;
+    margin-top: -22px; flex-shrink: 0; overflow: hidden;
+  }
+  .prog-logo-wrap img { width: 34px; height: 34px; border-radius: 6px; object-fit: contain; }
+  .prog-title-block { flex: 1; min-width: 0; padding-top: 6px; }
+  .prog-name { font-size: 20px; font-weight: 700; margin: 0 0 4px; }
+  .prog-meta { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .prog-url  { font-size: 12px; color: var(--accent2); text-decoration: none; }
+  .prog-url:hover { text-decoration: underline; }
+  .prog-stats-strip {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    border-top: 1px solid var(--border);
+  }
+  .pstat { padding: 10px 0; text-align: center; border-right: 1px solid var(--border); }
+  .pstat:last-child { border-right: none; }
+  .pstat-val { font-family: var(--mono); font-size: 18px; font-weight: 700; line-height: 1; }
+  .pstat-label { font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: .4px; margin-top: 3px; }
 
   /* ── tabs ── */
   .tabs { display:flex; gap:0; border-bottom:1px solid var(--border); margin-bottom:20px; }
@@ -72,9 +102,7 @@
   .add-recon-form .form-row {
     display:flex; gap:8px; flex-wrap:wrap; align-items:flex-end;
   }
-  .add-recon-form input, .add-recon-form select {
-    padding:7px 10px; font-size:13px;
-  }
+  .add-recon-form input, .add-recon-form select { padding:7px 10px; font-size:13px; }
   .add-recon-form .f-val { flex:1; min-width:200px; }
   .add-recon-form .f-cat { width:140px; }
   .add-recon-form .f-src { width:130px; }
@@ -97,58 +125,43 @@
 {% block content %}
 <div class="container">
 
-  <!-- Header -->
-  <div class="prog-header">
-    <div class="prog-header-main">
-      <a href="{{ url_for('programs.list_programs') }}" class="text-muted" style="font-size:13px;text-decoration:none">← Programs</a>
-      <div class="prog-name" style="margin-top:6px">
-        {{ program.name }}
-        {% if not program.active %}
-          <span style="font-size:13px;color:var(--muted);font-weight:400;margin-left:8px">(inactive)</span>
-        {% endif %}
-      </div>
-      <div class="prog-meta">
-        <span class="badge badge-informational">{{ program.platform }}</span>
-        {% if program.program_url %}
-          <a href="{{ program.program_url }}" target="_blank" rel="noopener" class="prog-url">↗ Program Page</a>
-        {% endif %}
-        <span class="text-muted" style="font-size:12px">
-          Created {{ program.created_at.strftime('%Y-%m-%d') if program.created_at }}
-        </span>
-      </div>
-    </div>
-    <div style="display:flex;gap:8px;flex-shrink:0">
-      <a href="{{ url_for('findings.add_finding') }}?program_id={{ program.id }}" class="btn btn-primary btn-sm">+ Finding</a>
-      <a href="{{ url_for('programs.edit_program', pid=program.id) }}" class="btn btn-ghost btn-sm">Edit</a>
-    </div>
-  </div>
-
-  <!-- Stats row -->
+  <!-- Hero Header -->
   {% set s = program.stats() %}
-  <div class="stats-row">
-    <div class="scard">
-      <div class="scard-label">Total</div>
-      <div class="scard-val" style="color:var(--accent2)">{{ s.total }}</div>
+  <div class="prog-hero">
+    <div class="prog-hero-banner">
+      <a href="{{ url_for('programs.list_programs') }}" class="prog-banner-nav">← Programs</a>
+      <div class="prog-banner-actions">
+        <a href="{{ url_for('findings.add_finding') }}?program_id={{ program.id }}" class="btn btn-primary btn-sm">+ Finding</a>
+        <a href="{{ url_for('programs.edit_program', pid=program.id) }}" class="btn btn-ghost btn-sm">Edit</a>
+      </div>
     </div>
-    <div class="scard">
-      <div class="scard-label">Critical</div>
-      <div class="scard-val" style="color:var(--critical)">{{ s.by_severity.critical }}</div>
+
+    <div class="prog-identity">
+      <div class="prog-logo-wrap">
+        {% if program.program_url %}
+          <img src="https://www.google.com/s2/favicons?domain={{ program.program_url }}&sz=64" onerror="this.style.display='none'">
+        {% endif %}
+      </div>
+      <div class="prog-title-block">
+        <div class="prog-name">
+          {{ program.name }}
+          {% if not program.active %}<span style="font-size:13px;color:var(--muted);font-weight:400;margin-left:6px">(inactive)</span>{% endif %}
+        </div>
+        <div class="prog-meta">
+          <span class="badge badge-informational">{{ program.platform }}</span>
+          {% if program.program_url %}
+            <a href="{{ program.program_url }}" target="_blank" rel="noopener" class="prog-url">↗ Program Page</a>
+          {% endif %}
+          <span class="text-muted" style="font-size:11px;font-family:var(--mono)">{{ program.created_at.strftime('%Y-%m-%d') if program.created_at }}</span>
+        </div>
+      </div>
     </div>
-    <div class="scard">
-      <div class="scard-label">High</div>
-      <div class="scard-val" style="color:var(--high)">{{ s.by_severity.high }}</div>
-    </div>
-    <div class="scard">
-      <div class="scard-label">Confirmed</div>
-      <div class="scard-val" style="color:#06d6a0">{{ s.by_status.confirmed }}</div>
-    </div>
-    <div class="scard">
-      <div class="scard-label">Rewarded</div>
-      <div class="scard-val" style="color:#00ffb3">{{ s.by_status.rewarded }}</div>
-    </div>
-    <div class="scard">
-      <div class="scard-label">Recon</div>
-      <div class="scard-val" style="color:var(--low)">{{ program.recon|length }}</div>
+
+    <div class="prog-stats-strip">
+      <div class="pstat"><div class="pstat-val" style="color:var(--accent2)">{{ s.total }}</div><div class="pstat-label">Total</div></div>
+      <div class="pstat"><div class="pstat-val" style="color:var(--critical)">{{ s.by_severity.critical }}</div><div class="pstat-label">Critical</div></div>
+      <div class="pstat"><div class="pstat-val" style="color:var(--high)">{{ s.by_severity.high }}</div><div class="pstat-label">High</div></div>
+      <div class="pstat"><div class="pstat-val" style="color:#00ffb3">{{ s.by_status.rewarded }}</div><div class="pstat-label">Rewarded</div></div>
     </div>
   </div>
 
@@ -210,7 +223,7 @@
     </div>
 
     <!-- Recon tab -->
-    <div id="tab-recon" class="tab-panel" id="recon">
+    <div id="tab-recon" class="tab-panel">
       {% set cat_icons = {'subdomain':'🌐','endpoint':'🔗','technology':'⚙️','parameter':'🔧','credential':'🔑','ip':'📡','other':'📌'} %}
       {% for category in recon_categories %}
         {% if recon_grouped.get(category) %}
@@ -235,7 +248,6 @@
         {% endif %}
       {% endfor %}
 
-      <!-- Add recon inline form -->
       <div class="add-recon-form">
         <div style="font-size:12px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.4px;margin-bottom:10px">
           + Add Recon Entry
@@ -324,7 +336,6 @@
     btn.classList.add('active');
   }
 
-  // Auto-open recon tab if URL has #recon
   if (window.location.hash === '#recon') {
     document.querySelectorAll('.tab-btn')[1].click();
   }
