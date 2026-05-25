@@ -122,6 +122,7 @@ All portal operations use the `bb-huge` MCP server. Auth is handled via the
 running (`gemini-cli`, `claude`, `claude-code`, `emmu`, `codex`). Never use
 `manual` unless a human is entering directly through the web UI.
 
+full reference of all tools and when to use them is in `references/tools-list.md` — load it at the start of every session.
 ---
 
 ## Linking Findings to Programs
