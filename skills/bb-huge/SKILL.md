@@ -25,6 +25,32 @@ than a perfect entry that never gets written.
 
 ---
 
+## Skill Base Path
+
+This skill is installed globally. All `references/` and `scripts/` paths in
+this file are relative to the skill's own directory. Resolve them using the
+correct base path for whichever agent is running:
+
+| Agent | Skill base path |
+|-------|----------------|
+| Gemini CLI | `~/.gemini/skills/bb-huge/` |
+| Claude Code | `~/.claude/skills/bb-huge/` |
+| Codex | `~/.codex/skills/bb-huge/` |
+| OpenCode | `~/.config/opencode/skills/bb-huge/` |
+
+**Rule:** When this skill instructs you to load a file such as
+`references/bb-orchestrator.md`, resolve it as
+`<skill-base-path>/references/bb-orchestrator.md` using the table above.
+Never look for these files in the current workspace directory.
+
+If you are unsure which base path to use, run:
+```
+find ~ -path "*/skills/bb-huge/SKILL.md" 2>/dev/null | head -5
+```
+The directory containing `SKILL.md` is your `<skill-base-path>`.
+
+---
+
 ## Evidence Pipeline (The Core Workflow)
 
 Vulnerabilities don't appear fully formed. They evolve through stages. bb-huge
@@ -122,7 +148,9 @@ All portal operations use the `bb-huge` MCP server. Auth is handled via the
 running (`gemini-cli`, `claude`, `claude-code`, `emmu`, `codex`). Never use
 `manual` unless a human is entering directly through the web UI.
 
-full reference of all tools and when to use them is in `references/tools-list.md` — load it at the start of every session.
+Full tool reference: `<skill-base-path>/references/tools-list.md`
+Load this at the start of every session using the path resolution rules above.
+
 ---
 
 ## Linking Findings to Programs
@@ -234,9 +262,11 @@ When a vulnerability is discovered during any session:
 
 Run this FIRST if activated via an automated schedule, cron job, or queued mission dispatcher:
 
-1. **Load `references/im-scheduled.md`** immediately before taking any other action.
+1. **Load `<skill-base-path>/references/im-scheduled.md`** immediately before
+   taking any other action.
 2. Read and ingest the system prompt and mission constraints defined in that file.
-3. Proceed with the assigned mission following those specific instructions, applying SOP-1 through SOP-6 only as permitted by the scheduled mission parameters.
+3. Proceed with the assigned mission following those specific instructions,
+   applying SOP-1 through SOP-6 only as permitted by the scheduled mission parameters.
 
 ---
 
@@ -293,8 +323,8 @@ When asked to "continue on finding X" or "setup workspace for X":
 1. **`bb_get_finding(X)`** — read the current state and existing notes.
 2. **`bb_generate_report_context(X)`** — pull the full report pack including
    linked hypothesis data, evidence summary, attachments, and unresolved gaps.
-3. **`python scripts/bb-dump-attachments.py X`** — pull all evidence files to
-   local disk.
+3. **`python <skill-base-path>/scripts/bb-dump-attachments.py X`** — pull all
+   evidence files to local disk.
 4. Read the downloaded files to fully restore context.
 5. **Give a one-paragraph summary** of where things stand before continuing:
    - Current status and severity
@@ -424,7 +454,8 @@ When a finding is `confirmed` and you're ready to write the report:
 2. **Fill the unresolved gaps** before writing the report:
    - `bb_update_finding()` to add missing CWE, CVSS, PoC
    - `bb_upload_attachment()` to attach screenshots or recordings
-3. **Load `bb-report-templates.md`** for the matching vulnerability type.
+3. **Load `<skill-base-path>/references/bb-report-templates.md`** for the
+   matching vulnerability type.
 4. Write the report using the template, filling from the report pack data.
 5. Submit to the bug bounty platform.
 6. **`bb_update_status()` → `reported`**.
@@ -436,10 +467,14 @@ When a finding is `confirmed` and you're ready to write the report:
 Two local Python scripts bridge your terminal workspace and the portal.
 Both inherit auth from environment variables — no credentials hardcoded.
 
+Resolve script paths using `<skill-base-path>` from the table at the top of
+this file. Never run these with a bare relative path like `python scripts/...`
+from a workspace directory — they will not be found.
+
 | Script | Invocation | Purpose |
 |--------|-----------|---------|
-| `bb-orchestrator-list-skills.py` | `python scripts/bb-orchestrator-list-skills.py` | Lists every skill in `~/.gemini/skills/` so you know which specialist tools are available |
-| `bb-dump-attachments.py` | `python scripts/bb-dump-attachments.py <id>` | Downloads all attachments for finding `<id>` into `./finding_<id>_assets/` for local review |
+| `bb-orchestrator-list-skills.py` | `python <skill-base-path>/scripts/bb-orchestrator-list-skills.py` | Lists every skill in `~/.gemini/skills/` so you know which specialist tools are available |
+| `bb-dump-attachments.py` | `python <skill-base-path>/scripts/bb-dump-attachments.py <id>` | Downloads all attachments for finding `<id>` into `./finding_<id>_assets/` for local review |
 
 Environment variables (set in shell or `.env` before running):
 - `BB_HUGE_URL` — defaults to `http://127.0.0.1:5000`
@@ -522,8 +557,11 @@ bb_create_finding({
 
 ## Knowledge Base
 
-Deep reference material lives in `references/`. Load **only what you need**
-for the current task — do not load all files at once.
+Deep reference material lives in `<skill-base-path>/references/`. Load **only
+what you need** for the current task — do not load all files at once.
+
+Always resolve these paths using the **Skill Base Path** table at the top of
+this file. Never search for these files in the current workspace directory.
 
 | File | When to load |
 |------|-------------|
@@ -535,7 +573,8 @@ for the current task — do not load all files at once.
 | `references/bb-report-templates.md` | Writing a report — fill-in templates for XSS, IDOR, SSRF, SQLi, and more |
 | `references/im-scheduled.md` | Start of a scheduled or automated mission — dictates specific constraints and system prompts |
 
-Check `references/` for files added after this document — the library grows over time.
+Check `<skill-base-path>/references/` for files added after this document —
+the library grows over time.
 
 ---
 
