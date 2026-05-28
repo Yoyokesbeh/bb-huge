@@ -173,6 +173,36 @@ and payouts per program.
 **Always call `bb_list_programs()` before `bb_create_program()`** to check if a
 program already exists. Never create duplicate programs.
 
+## Program logo (logo_url)
+
+Agents and humans can attach a public program logo to a Program record using the `logo_url` field. Use an absolute HTTP(S) URL to a publicly reachable image (PNG, JPG, or SVG). The portal will display this image in program lists and reports when present.
+
+When to populate
+- When creating a new Program entry for an organization where a public logo is available and useful for visual identification.
+- When promoting findings into reports where including the vendor logo improves readability or presentation.
+
+Security note
+- Do not upload or reference private/internal-only images. Use public CDNs or hosted assets.
+
+Example MCP / API payload (create):
+
+```json
+{
+  "name": "Acme Corp",
+  "platform": "private",
+  "program_url": "https://hackerone.com/acme",
+  "logo_url": "https://example.com/logos/acme.png"
+}
+```
+
+Example MCP / API payload (update):
+
+```json
+{ "logo_url": "https://example.com/logos/acme-new.png" }
+```
+
+Agents should only populate `logo_url` when the image is publicly accessible and clearly identifies the program. The example script in `skills/bb-huge/scripts/` demonstrates creating/updating a Program with `logo_url`.
+
 ---
 
 ## Severity Reference

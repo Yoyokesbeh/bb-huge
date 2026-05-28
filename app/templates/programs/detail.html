@@ -378,7 +378,9 @@
 
     <div class="prog-identity">
       <div class="prog-logo-wrap">
-        {% if program.program_url %}
+        {% if program.logo_url %}
+          <img src="{{ program.logo_url }}" onerror="this.style.display='none'">
+        {% elif program.program_url %}
           <img src="https://www.google.com/s2/favicons?domain={{ program.program_url }}&sz=64" onerror="this.style.display='none'">
         {% endif %}
       </div>

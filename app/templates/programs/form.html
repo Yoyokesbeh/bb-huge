@@ -58,6 +58,12 @@
                value="{{ program.program_url if program else '' }}"
                placeholder="https://hackerone.com/acme">
       </div>
+      <div class="form-group">
+        <label for="logo_url">Logo URL</label>
+        <input type="text" id="logo_url" name="logo_url"
+               value="{{ program.logo_url if program else '' }}"
+               placeholder="https://example.com/logo.png">
+      </div>
 
       <div class="section-divider">Scope</div>
       <div class="form-group">

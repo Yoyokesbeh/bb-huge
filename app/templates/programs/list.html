@@ -108,7 +108,10 @@
 
       <div class="pc-head">
         <div class="pc-logo">
-          {% if p.program_url %}
+          {% if p.logo_url %}
+            <img src="{{ p.logo_url }}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+            <span class="pc-logo-letter" style="display:none">{{ p.name[0]|upper }}</span>
+          {% elif p.program_url %}
             <img src="https://www.google.com/s2/favicons?domain={{ p.program_url }}&sz=32"
                  onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
             <span class="pc-logo-letter" style="display:none">{{ p.name[0]|upper }}</span>

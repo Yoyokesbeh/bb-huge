@@ -150,6 +150,7 @@ class Program(db.Model):
     name = db.Column(db.String(200), nullable=False, unique=True)
     platform = db.Column(db.String(100), nullable=False, default="private")
     program_url = db.Column(db.String(500), nullable=True)
+    logo_url = db.Column(db.String(500), nullable=True)
     scope_in = db.Column(db.Text, nullable=False, default="")
     scope_out = db.Column(db.Text, nullable=False, default="")
     notes = db.Column(db.Text, nullable=False, default="")
@@ -185,6 +186,7 @@ class Program(db.Model):
             "name": self.name,
             "platform": self.platform,
             "program_url": self.program_url,
+            "logo_url": self.logo_url,
             "scope_in": self.scope_in,
             "scope_out": self.scope_out,
             "notes": self.notes,

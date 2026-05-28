@@ -8,6 +8,14 @@ Copy, fill in the blanks, and submit.
 
 ---
 
+Programs in the report pack include metadata such as `name`, `program_url`, and `logo_url`. Templates can reference `program.logo_url` to place a logo in report headers. Example snippet from a report pack:
+
+```json
+"program": { "id": 12, "name": "Acme Corp", "program_url": "https://hackerone.com/acme", "logo_url": "https://example.com/logos/acme.png" }
+
+Report templates can reference `program.logo_url` to place a logo in the report header.
+```
+
 ## Report Preparation Checklist
 
 Before using any template below, run this prep workflow:

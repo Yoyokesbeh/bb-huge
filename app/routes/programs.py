@@ -133,6 +133,7 @@ def add_program():
             name        = request.form["name"].strip(),
             platform    = request.form.get("platform", "private"),
             program_url = request.form.get("program_url", "").strip() or None,
+            logo_url    = request.form.get("logo_url", "").strip() or None,
             scope_in    = request.form.get("scope_in", ""),
             scope_out   = request.form.get("scope_out", ""),
             notes       = request.form.get("notes", ""),
@@ -158,6 +159,7 @@ def edit_program(pid):
         p.name        = request.form["name"].strip()
         p.platform    = request.form.get("platform", p.platform)
         p.program_url = request.form.get("program_url", "").strip() or None
+        p.logo_url    = request.form.get("logo_url", "").strip() or None
         p.scope_in    = request.form.get("scope_in", "")
         p.scope_out   = request.form.get("scope_out", "")
         p.notes       = request.form.get("notes", "")

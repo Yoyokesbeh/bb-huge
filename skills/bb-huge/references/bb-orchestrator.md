@@ -23,6 +23,8 @@ When you receive a task, route it to the correct reference file before acting:
 
 **Load only the reference you need.** Do not load all files at once.
 
+Note: Program records can include a `logo_url` field. Agents creating programs may populate a public image URL to improve UI and report appearance. See `skills/bb-huge/SKILL.md` for guidance.
+
 ---
 
 ## Session Initialization Protocol

@@ -5,6 +5,7 @@ from . import db
 
 MIGRATION_V2_FIRST_SLICE = "20260520_v2_first_slice"
 MIGRATION_ASSETS_ENDPOINTS = "20260522_assets_endpoints"
+MIGRATION_PROGRAMS_LOGO = "20260529_programs_logo"
 
 
 def run_migrations():
@@ -39,6 +40,7 @@ def _migrations():
     return [
         (MIGRATION_V2_FIRST_SLICE, _migration_v2_first_slice),
         (MIGRATION_ASSETS_ENDPOINTS, _migration_assets_endpoints),
+        (MIGRATION_PROGRAMS_LOGO, _migration_programs_logo),
     ]
 
 
@@ -106,3 +108,17 @@ def _add_column_if_missing(conn, columns, name, sql):
         return
     conn.execute(text(sql))
     columns.add(name)
+
+
+def _migration_programs_logo(conn):
+    inspector = inspect(conn)
+    if "programs" not in inspector.get_table_names():
+        return
+
+    columns = {column["name"] for column in inspector.get_columns("programs")}
+    _add_column_if_missing(
+        conn,
+        columns,
+        "logo_url",
+        "ALTER TABLE programs ADD COLUMN logo_url VARCHAR(500)",
+    )

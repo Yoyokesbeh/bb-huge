@@ -80,6 +80,8 @@ Goal: Write a report that gets triaged correctly the first time.
 4. Self-review: is the impact clear? are steps reproducible?
 ```
 
+Note: Programs support an optional `logo_url` field. When creating or updating Program records, consider adding a public logo URL to improve dashboard and report readability. See `skills/bb-huge/SKILL.md` for example payloads and the `bb-skill-examples.py` script for a runnable demo.
+
 ---
 
 ## High-Frequency Finding Patterns

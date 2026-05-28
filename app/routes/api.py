@@ -585,6 +585,7 @@ def create_program():
         name=data["name"].strip(),
         platform=data.get("platform", "private"),
         program_url=data.get("program_url"),
+        logo_url=data.get("logo_url"),
         scope_in=data.get("scope_in", ""),
         scope_out=data.get("scope_out", ""),
         notes=data.get("notes", ""),
@@ -603,6 +604,8 @@ def update_program(pid):
     for field in ["name", "platform", "program_url", "scope_in", "scope_out", "notes"]:
         if field in data:
             setattr(program, field, data[field])
+    if "logo_url" in data:
+        program.logo_url = data.get("logo_url")
     if "active" in data:
         program.active = bool(data["active"])
     program.updated_at = datetime.now(timezone.utc)

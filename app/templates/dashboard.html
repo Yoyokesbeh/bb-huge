@@ -356,7 +356,9 @@
       {% set s = p.stats() %}
       <a href="{{ url_for('programs.detail', pid=p.id) }}" class="program-mini">
         <div class="program-mini-name">
-          {% if p.company_url or p.program_url %}
+          {% if p.logo_url %}
+            <img src="{{ p.logo_url }}" alt="{{ p.name }} logo" style="width:16px;height:16px;border-radius:4px;vertical-align:middle;margin-right:6px;object-fit:contain" onerror="this.style.display='none'">
+          {% elif p.company_url or p.program_url %}
             <img 
               src="https://www.google.com/s2/favicons?domain={{ p.company_url or p.program_url }}&sz=16"
               style="width:14px;height:14px;border-radius:3px;vertical-align:middle;margin-right:5px"
