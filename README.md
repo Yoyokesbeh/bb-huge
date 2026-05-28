@@ -128,7 +128,7 @@ graph TB
 ### Quick Start
 
 ```bash
-git clone <your-repo>
+git clone https://github.com/ShulkwiSEC/bb-huge.git
 cd bb-huge
 cp .env.example .env
 # Edit .env — set SECRET_KEY and DEV_KEY
