@@ -586,4 +586,4 @@ bb-huge/
 
 ## License
 
-Personal use. Do whatever you want. Hunt bugs, get paid. 🤗
+This project is licensed under the MIT License — see the [LICENSE](LICENSE.md) file for details.
