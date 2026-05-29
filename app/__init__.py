@@ -9,6 +9,12 @@ def create_app(config_object="config.Config"):
     app = Flask(__name__, instance_relative_config=True)
     app.config.from_object(config_object)
 
+    # ── Validation: warn on missing env vars, never crash ─────────────────────
+    import importlib
+    cfg_module, cfg_class = config_object.rsplit(".", 1)
+    cfg = getattr(importlib.import_module(cfg_module), cfg_class)
+    cfg.validate()
+
     # Ensure instance and uploads folders exist
     os.makedirs(app.instance_path, exist_ok=True)
     os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
@@ -35,7 +41,6 @@ def create_app(config_object="config.Config"):
         status_color=lambda s:   STATUS_COLORS.get(s, "gray"),
     )
 
-    # ── Sidebar data (injected into every template) ──
     @app.context_processor
     def inject_sidebar_data():
         from .models import Finding, Program
@@ -49,9 +54,7 @@ def create_app(config_object="config.Config"):
         )
 
     with app.app_context():
-        # Bootstrap all currently declared tables for fresh installs.
         db.create_all()
-        # Apply explicit versioned schema upgrades for existing databases.
         from .migrations import run_migrations
         run_migrations()
 
